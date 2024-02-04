@@ -1,0 +1,234 @@
+---
+title: "Assignment_3"
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+    latex_engine: pdflatex
+date: "2024-01-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning=FALSE,message=FALSE)
+library(ggplot2)
+library(dplyr)
+```
+
+## Problem 1
+
+```{r}
+
+creatinine <- read.csv("creatinine.csv")
+
+ggplot(creatinine) + geom_point(aes(x = age, y = creatclear)) + geom_smooth(aes(x = age, y = creatclear), method = "lm") + labs(title = "Age vs Their Kidney Health (mL/minute)")
+
+lm_model <- lm(creatclear ~ age, data = creatinine)
+
+
+creatinine <- creatinine %>%
+  mutate(creatclear_predict = predict(lm_model)) %>% 
+  filter(age == 55)
+
+print(creatinine)
+
+
+
+```
+
+I predict the creatinine clearance rate is about 114 mL/minute. I determine this 
+by using two methods. One of which I drew a line graph representing the line of
+best fit for different data-points. When looking at the graph, you can tell for
+an age of 55 the creatinine clearance rate is a little above 110. Another way 
+was creating a linear model between creatinine clearance rate and age and 
+predicting what the clearance rate would be at age 55. 
+
+
+```{r}
+slope <- coef(lm_model)[2]
+print(slope)
+```
+
+For an increase in one year, the creatinine clearance rate drop on average 
+about 0.62 mL/min. I determined this by taking the coefficient of the linear 
+model and filtered the data so it gave me the slope of the line. 
+
+
+```{r}
+
+# Predict clearance rates for a 40-year-old and a 60-year-old
+clearance_rate_40 <- predict(lm_model, newdata = data.frame(age = 40))
+clearance_rate_60 <- predict(lm_model, newdata = data.frame(age = 60))
+residual_clearance_rate_40 <- 135 - clearance_rate_40
+residual_clearance_rate_60 <-  112 - clearance_rate_60
+
+residual_clearance_rate_40
+residual_clearance_rate_60
+
+# Compare predicted clearance rates
+if (residual_clearance_rate_40 > residual_clearance_rate_60) {
+  print("The creatinine clearance rate is healthier for the 40-year-old.")
+} else if (residual_clearance_rate_40 < residual_clearance_rate_60) {
+  print("The creatinine clearance rate is healthier for the 60-year-old.")
+} else {
+  print("Both individuals have the same predicted creatinine clearance rate.")
+}
+
+
+```
+The creatinine clearance rate is healthier for the 40 year old than the 60 year
+old. I determined this by finding the estimated clearance rate for a 40 and 60
+year old. Then using the rates given, I solved for the residual which tests 
+the creatinine clearance rate relative to their age. Specifically, the creatine
+clearance rate for a 40 year old with a rate of 135 is about 12 ml/min above
+average while the rate for a 60 year old with a rate of 112 is only 1 ml/min 
+above average.
+
+
+## Problem 2
+
+```{r}
+  # Load necessary libraries
+library(readr)
+library(dplyr)
+
+# Read the data from marketmodel.csv
+market_data <- read_csv("marketmodel.csv")
+
+# Subset the data for each stock and perform regression analysis
+results <- data.frame(
+  Ticker = c("AAPL", "GOOG", "MRK", "JNJ", "WMT", "TGT"),
+  Intercept = numeric(6),
+  Slope = numeric(6),
+  `R-squared` = numeric(6)
+)
+
+for (i in 1:6) {
+  stock_name <- results$Ticker[i]
+  
+  # Perform linear regression
+  regression_model <- lm(market_data[[stock_name]] ~ SPY, data = market_data)
+  
+  # Extract coefficients and R-squared
+  results$Intercept[i] <- coef(regression_model)[1]
+  results$Slope[i] <- coef(regression_model)[2]
+  results$`R-squared`[i] <- summary(regression_model)$r.squared
+  
+}
+
+# Print the results
+print(results)
+
+
+```
+Beta is for every 1% change in market portfolio, it is the percent change in the
+stocks. It determines how much systematic risk a stock has. A beta close to 0 
+will hardly change when the market collapses while a beta greater to 1 will 
+change a lot when the market collapses. 
+
+Here on the table the ticker represents the different shares of stocks. The 
+slope represents the beta value. The intercept represents alpha meaning return
+on investment compared to the market average. The R-square value is the 
+coefficient of determination which indicates how much the SPY is dependent on
+the stock name.
+
+AAPL has the highest systematic risk because the beta value is greater than 1 
+and WMT has the lowest systenatic risk because the beta value is close to 0.  
+
+## Problem 3
+
+```{r}
+
+# Read the data from covid.csv
+covid <- read.csv("covid.csv")
+
+# Filter data for Italy and Spain
+italy_data <- covid[covid$country == "Italy", ]
+spain_data <- covid[covid$country == "Spain", ]
+
+# Fit exponential growth model for Italy
+italy_model <- lm(log(deaths) ~ days_since_first_death, data = italy_data)
+
+# Extract growth rate and doubling time for Italy
+growth_rate_italy <- coef(italy_model)[2] * 100
+doubling_time_italy <- 70 / growth_rate_italy
+
+# Fit exponential growth model for Spain
+spain_model <- lm(log(deaths) ~ days_since_first_death, data = spain_data)
+
+
+# Extract growth rate and doubling time for Spain
+growth_rate_spain <- coef(spain_model)[2] * 100
+doubling_time_spain <- 70 / growth_rate_spain
+
+# Print results
+cat("Italy:\n")
+cat("Estimated growth rate:", round(growth_rate_italy,3), "\n")
+cat("Estimated doubling time:", round(doubling_time_italy), "\n")
+
+cat("\nSpain:\n")
+cat("Estimated growth rate:", round(growth_rate_spain,3), "\n")
+cat("Estimated doubling time:", round(doubling_time_spain), "\n")
+
+
+
+
+```
+The estimate growth rate for Italy is 18.32% while it takes 4 days to double and
+the growth rate for Spain is about 27.63% while it take 3 days to double. To get
+the growth rate I did a linear regression model of deaths and days passed. 
+Then I found the slope of the regression line multiplied by 100 
+was the growth rate and divided that from 70 to get the doubling time for both 
+Spain and Italy. 
+
+
+```{r}
+lm_covid_italy = lm(log(deaths) ~ days_since_first_death, data=italy_data)
+coef(lm_covid_italy)
+
+lm_covid_spain = lm(log(deaths) ~ days_since_first_death, data=spain_data)
+coef(lm_covid_spain)
+
+
+
+
+ggplot(covid, aes(x = days_since_first_death, y = log(deaths), color = country)) +
+  geom_line() +
+  labs(title = "Daily Deaths Over Time", x = "Days Since First Death", y = "Deaths") + 
+  geom_abline(slope = 0.183, intercept = 1.019, color = "darkred") + geom_abline(slope = 0.276, intercept = 0.465, color = "darkblue")
+```
+
+Here is a line graph representing the days since first death (x-axis) and deaths
+(y-axis) where the lines are seperated by country. To make the line linear I 
+added log to the death variable to make it linear. I then added a linear model 
+and found out the y-intercept and slope of both of the regression lines and 
+plotted them.
+
+
+## Problem 4
+
+```{r}
+milk <- read.csv("milk.csv")
+
+ggplot(milk) + geom_point(aes(x = price, y = sales)) + geom_smooth(aes(x = price, y = sales), method = "lm") 
+
+milk$log_sales <- log(milk$sales)
+milk$log_price <- log(milk$price)
+
+lm_model <- lm(log_sales ~ log_price, data = milk)
+
+elasticity <- coef(lm_model)[2]
+
+print(elasticity)
+
+```
+The price elasticity of demand for milk is about -1.62 meaning the demand for 
+milk decreases as the price increases. For an increase in 1% price in milk, the 
+quantity of milk decreases by on average 1.62%. I first graphed the data into a
+line graph and then I got the linear model from taking the log of the price 
+and sales to linearization the data and then took the correlation coefficient to 
+get the slope of the line.  
+
+
+
